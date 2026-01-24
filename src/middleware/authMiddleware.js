@@ -5,7 +5,7 @@ import { prisma } from '../config/db.js';
 //read token from request cookie
 
 export const authMiddleware = async (req, res, next) => {
-    console.log('Auth Middleware reached...', req.cookies?.jwt);
+    console.log('Auth Middleware reached...');
     let token;
     if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
         token = req.headers.authorization.split(' ')[1]
