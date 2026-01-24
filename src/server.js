@@ -1,24 +1,32 @@
 import express from 'express';
 import { connectDB, disconnectDB } from './config/db.js';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+
 
 //Import routes
-import movieRoutes from './routes/movieRoutes.js'
-import watchlistRoutes from './routes/watchlistRoutes.js'
 import authRoutes from './routes/authRoutes.js'
+import { authMiddleware } from './middleware/authMiddleware.js';
 
 connectDB();
 
 
 const port = process.env.PORT || 5001
 const app = express();
-
+app.use(cookieParser());
+app.use(cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true
+}));
 //BODY PARSING MIDDLEWARE
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 //ROUTES
-app.use("/movies", movieRoutes)
-app.use("/watchlist", watchlistRoutes)
+app.get("/", authMiddleware, (req, res) => {
+    res.json({ message: "Welcome to Bookish API" })
+});
+
 app.use("/auth", authRoutes);
 const server = app.listen(port, () => console.log(`listening to port ${port}`))
 
