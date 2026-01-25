@@ -9,10 +9,10 @@ export const authMiddleware = async (req, res, next) => {
     let token;
     if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
         token = req.headers.authorization.split(' ')[1]
-    } else if (req.cookies?.jwt) {
-        token = req.cookies.jwt
+    } else if (req.cookies?.accessToken) {
+        token = req.cookies.accessToken
     }
-    console.log('This is the token', req.cookies);
+    console.log('This is the token', req.cookies?.accessToken);
 
     if (!token) {
         return res.status(401).json({ error: 'Not authorized' })

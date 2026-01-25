@@ -15,4 +15,4 @@ transporter.verify((error, success) => {
     } else {
         console.log("Email server is reay to send mails!");
     }
-})
+});

@@ -1,8 +1,11 @@
-import { generateToken } from "../../utils/generateToken.js";
+import { generateTokens } from "../../utils/generateToken.js";
 import { prisma } from "../db.js";
 import bcrypt from 'bcryptjs';
+import { errorResponse, successResponse } from './../../utils/response.js';
+import { sendVerificationEmail } from "../../services/emailService.js";
+import crypto from 'crypto';
 
-
+//HANDLES REGISTERATION AND SENDING VERIFICATION EMAIL
 export const register = async (req, res) => {
     const { name, email, password } = req.body
     //check if user already exist
@@ -11,7 +14,7 @@ export const register = async (req, res) => {
     });
 
     if (userExist) {
-        return res.status(401).json({ error: 'User already exist with this email!' })
+        errorResponse(409, res, 'User already exist with this email!');
     }
 
     //HASH PASSWORD
@@ -27,21 +30,65 @@ export const register = async (req, res) => {
         }
     });
 
-    //GENERATE TOKEN
-    const token = generateToken(user.id, res);
+    //Generate and send verification email here
+    await handleEmailVerification(user);
 
     // res.json({ msg: 'Holla' })
-    res.json({
-        status: 'success',
+    successResponse(200, res, user, 'User registered successfully, check your mail for verification link');
+
+}
+const handleEmailVerification = async (user) => {
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    await prisma.verificationToken.create({
         data: {
-            user: {
-                id: user.id,
-                user: name,
-                email: email
-            },
-            token
+            userId: user.id,
+            token: verificationToken,
+            type: 'email_verification',
+            expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+        }
+    });
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify?token=${verificationToken}&id=${user.id}`;
+
+    await sendVerificationEmail(user.email, verificationUrl, user.name)
+}
+
+
+
+
+//EMAIL VERIFICATION HANDLER/ROUTE
+export const verifyEmail = async (req, res) => {
+    const { token, userId } = req.body;
+    console.log(token, userId);
+    const record = await prisma.verificationToken.findFirst({
+        where: {
+            userId: userId,
+            token: token
         }
     })
+    console.log(record, 'Record');
+    if (!record) {
+        errorResponse(400, res, 'Invalid or expired verification token');
+    }
+
+    if (record.usedAt) {
+        return errorResponse(400, res, 'Verification token already used');
+    }
+
+    if (record.expiresAt < new Date()) {
+        return errorResponse(400, res, 'Verification token expired');
+    }
+
+    await prisma.user.update({
+        where: { id: record.userId },
+        data: { isVerified: true }
+    });
+
+    await prisma.verificationToken.update({
+        where: { id: record.id },
+        data: { usedAt: new Date() }
+    });
+
+    successResponse(200, res, null, 'message', 'Email verified successfully');
 }
 
 export const login = async (req, res) => {
@@ -63,21 +110,22 @@ export const login = async (req, res) => {
     }
 
     //GENERATE JWT TOKEN
-    const token = generateToken(user.id, res);
+    const { accessToken, refreshToken } = await generateTokens(user.id, res);
 
     // res.json({ msg: 'Holla' })
-    res.json({
-        status: 'success',
-        message: 'User logged in successfully',
-        data: {
-            user: {
-                id: user.id,
-                user: user.name,
-                email: email
-            },
-            token,
-        }
-    })
+    successResponse(200, res, user, 'accessToken', accessToken, 'User logged in successfully');
+    // res.json({
+    //     status: 'success',
+    //     message: 'User logged in successfully',
+    //     data: {
+    //         user: {
+    //             id: user.id,
+    //             user: user.name,
+    //             email: email
+    //         },
+    //         token,
+    //     }
+    // })
 }
 
 

@@ -1,10 +1,7 @@
 import e from "express"
 import { custom } from "zod"
 
-export const successResponse = (status, res, data, customKey = null, customDetails = null, message) => {
-    if (customDetails && customKey) {
-        data[customKey] = customDetails
-    }
+export const successResponse = (status, res, data, message) => {
     return res.status(status).json({
         success: true,
         message,
