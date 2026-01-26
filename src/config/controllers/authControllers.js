@@ -1,4 +1,4 @@
-import { generateTokens } from "../../utils/generateToken.js";
+import { generateAccessToken, generateRefreshToken } from "../../utils/generateToken.js";
 import { prisma } from "../db.js";
 import bcrypt from 'bcryptjs';
 import { errorResponse, successResponse } from './../../utils/response.js';
@@ -103,6 +103,12 @@ export const login = async (req, res) => {
         return res.status(401).json({ error: 'Invalid credentials' })
     }
 
+    if (!user.isVerified) {
+        return res.status(401).json({ error: 'Please verify your email to login' })
+    }
+
+
+    //CHECK IF PASSWORD IS CORRECT
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
@@ -110,7 +116,8 @@ export const login = async (req, res) => {
     }
 
     //GENERATE JWT TOKEN
-    const { accessToken, refreshToken } = await generateTokens(user.id, res);
+    await generateRefreshToken(user.id, res);
+    const accessToken = generateAccessToken(user.id, res);
 
     // res.json({ msg: 'Holla' })
     successResponse(200, res, user, 'accessToken', accessToken, 'User logged in successfully');
@@ -126,6 +133,61 @@ export const login = async (req, res) => {
     //         token,
     //     }
     // })
+}
+
+
+export const refreshAccessToken = async (req, res) => {
+    console.log("Refresh token body", req.body);
+    try {
+        const { refreshToken } = req.cookies;
+
+        if (!refreshToken) {
+            return res.status(401).json({
+                error: 'Refresh token required',
+                code: 'NO_REFRESH_TOKEN'
+            });
+        }
+
+
+        // Find refresh token in database
+        const storedToken = await prisma.refreshToken.findUnique({
+            where: { token: refreshToken },
+            include: { user: true }
+        });
+        if (!storedToken) {
+            return res.status(401).json({
+                error: 'Invalid refresh token',
+                code: 'INVALID_REFRESH_TOKEN'
+            });
+        };
+
+
+        // Check if expired (correct comparison!)
+        if (storedToken.expiresAt < new Date()) { // ✅ This is correct
+            // Delete expired token
+            await prisma.refreshToken.delete({
+                where: { token: refreshToken }
+            });
+
+            return res.status(401).json({
+                error: 'Refresh token expired. Please log in again.',
+                code: 'REFRESH_TOKEN_EXPIRED'
+            });
+        };
+
+        // Generate NEW access token
+        const newAccessToken = generateAccessToken(storedToken.userId, res);
+
+        return res.status(200).json({
+            message: 'Access token refreshed successfully',
+            accessToken: newAccessToken
+        });
+
+
+    } catch (error) {
+        console.error("Refresh error: ", error);
+        return res.status(500).json({ error: 'Failed to refresh token' })
+    }
 }
 
 
