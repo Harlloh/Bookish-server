@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { errorResponse, successResponse } from './../../utils/response.js';
 import { sendVerificationEmail } from "../../services/emailService.js";
 import crypto from 'crypto';
+import jwt from "jsonwebtoken";
 
 //HANDLES REGISTERATION AND SENDING VERIFICATION EMAIL
 export const register = async (req, res) => {
@@ -120,19 +121,18 @@ export const login = async (req, res) => {
     const accessToken = generateAccessToken(user.id, res);
 
     // res.json({ msg: 'Holla' })
-    successResponse(200, res, user, 'accessToken', accessToken, 'User logged in successfully');
-    // res.json({
-    //     status: 'success',
-    //     message: 'User logged in successfully',
-    //     data: {
-    //         user: {
-    //             id: user.id,
-    //             user: user.name,
-    //             email: email
-    //         },
-    //         token,
-    //     }
-    // })
+    res.json({
+        success: true,
+        message: 'User logged in successfully',
+        user: {
+            id: user.id,
+            user: user.name,
+            email: email,
+            isVerified: user.isVerified,
+            accessToken,
+            createdAt: user.createdAt
+        },
+    })
 }
 
 
@@ -187,6 +187,35 @@ export const refreshAccessToken = async (req, res) => {
     } catch (error) {
         console.error("Refresh error: ", error);
         return res.status(500).json({ error: 'Failed to refresh token' })
+    }
+}
+
+export const fetchUser = async (req, res) => {
+    try {
+        const { accessToken } = req.cookies
+        const decoded = jwt.verify(accessToken, process.env.JWT_SECRET)
+
+        const user = await prisma.user.findUnique({
+            where: { id: decoded.id },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                isVerified: true,
+                createdAt: true
+                // Don't send password!
+            }
+        })
+        if (!user) {
+            return res.status(404).json({ error: "User not found" })
+        }
+        res.status(200).json({
+            success: true,
+            user
+        });
+    } catch (error) {
+        console.error('Get current user error:', error);
+        res.status(500).json({ error: 'Failed to fetch user' });
     }
 }
 

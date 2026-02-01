@@ -18,9 +18,18 @@ export const authMiddleware = async (req, res, next) => {
         }
         console.log(token, 'Token found in auth middleware');
         if (!token) {
+            // Check if refresh token exists
+            if (req.cookies?.refreshToken) {
+                // Has refresh token but no access token - frontend should refresh
+                return res.status(401).json({
+                    error: 'Access token missing. Please refresh.',
+                    code: 'NO_ACCESS_TOKEN'
+                });
+            }
+            // No access token AND no refresh token - must sign in
             return res.status(401).json({
-                error: 'Not authorized - No token found',
-                code: 'NO_TOKEN' // Frontend can trigger refresh on this too
+                error: 'Not authorized. Please sign in.',
+                code: 'NO_TOKEN'
             });
         }
 
@@ -46,7 +55,7 @@ export const authMiddleware = async (req, res, next) => {
             if (error.name === 'TokenExpiredError') {
                 return res.status(401).json({
                     error: 'Access token expired',
-                    code: 'TOKEN_EXPIRED' // Frontend uses this to trigger refresh
+                    code: 'ACCESS_TOKEN_EXPIRED' // Frontend uses this to trigger refresh
                 });
             };
             if (error.name === 'JsonWebTokenError') {

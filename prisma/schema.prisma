@@ -13,8 +13,34 @@ datasource db {
   provider = "postgresql"
 }
 
+model VerificationToken {
+  id        String    @id @default(cuid())
+  token     String    @unique // IMPORTANT: Make this unique!
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String    @default("email_verification") // Add default value
+  expiresAt DateTime
+  usedAt    DateTime? // IMPORTANT: Make this optional (nullable)
+  createdAt DateTime  @default(now())
+
+  @@index([userId]) // Index for user queries
+  @@index([expiresAt]) // Index for cleanup queries
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
 model User {
-  id         String  @id @default(uuid())
+  id         String  @id @default(cuid())
   name       String
   email      String  @unique
   password   String
@@ -26,46 +52,37 @@ model User {
   books              Books[]
   verificationTokens VerificationToken[]
   refreshTokens      RefreshToken[]
+  reviews            Reviews[]
 }
 
 model Books {
-  id          String   @id @default(uuid())
-  title       String
-  overview    String?
-  releaseYear Int
-  genres      String[] @default([])
-  posterUrl   String?
-  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade) // Add onDelete
+  id            String    @id @default(cuid())
+  title         String
+  author        String
+  overview      String?
+  publishedYear Int
+  imageUrl      String?
+  addedBy       User      @relation(fields: [addedById], references: [id], onDelete: Cascade) // Add onDelete
+  addedById     String
+  createdAt     DateTime  @default(now())
+  reviews       Reviews[]
+
+  @@index([addedById]) // Add index for better query performance
+  @@index([publishedYear]) // Add index for better query performance
+}
+
+model Reviews {
+  id          String   @id @default(cuid())
+  book        Books    @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  bookId      String
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
   createdById String
-  createdAt   DateTime @default(now())
+  star        Int
+  comment     String   @db.Text
+  createdOn   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  @@index([createdById]) // Add index for better query performance
-}
-
-model VerificationToken {
-  id        String    @id @default(cuid())
-  token     String    @unique // IMPORTANT: Make this unique!
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String    @default("email_verification") // Add default value
-  expiresAt DateTime
-  usedAt    DateTime? // IMPORTANT: Make this optional (nullable)
-  createdAt DateTime  @default(now())
-
-  @@index([token]) // Index for fast token lookups
-  @@index([userId]) // Index for user queries
-  @@index([expiresAt]) // Index for cleanup queries
-}
-
-model RefreshToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@index([token])
-  @@index([userId])
-  @@index([expiresAt])
+  @@unique([bookId, createdById]) // ✅ Added - one review per user per book
+  @@index([bookId]) // ✅ Added - fast lookup of all reviews for a book
+  @@index([createdById]) // ✅ Added - fast lookup of all reviews by a user
 }
