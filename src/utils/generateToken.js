@@ -20,10 +20,16 @@ export const generateAccessToken = (userId, res) => {
 }
 
 export const generateRefreshToken = async (userId, res) => {
+    const usersId = userId
     const token = crypto.randomBytes(64).toString('hex');
     try {
-        await prisma.refreshToken.create({
-            data: {
+        await prisma.refreshToken.upsert({
+            where: { userId: usersId },
+            update: {
+                token,
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+            },
+            create: {
                 token,
                 userId: userId,
                 expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
@@ -34,7 +40,7 @@ export const generateRefreshToken = async (userId, res) => {
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
             maxAge: 7 * 24 * 60 * 60 * 1000 ///7 days in milli second
-        })
+        });
         return token
     } catch (error) {
         console.log("error saving refresh token: ", error);

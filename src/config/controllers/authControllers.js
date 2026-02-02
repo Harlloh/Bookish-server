@@ -138,6 +138,7 @@ export const login = async (req, res) => {
 
 export const refreshAccessToken = async (req, res) => {
     console.log("Refresh token body", req.body);
+    console.log("🔄 Refresh started");
     try {
         const { refreshToken } = req.cookies;
 
@@ -152,8 +153,8 @@ export const refreshAccessToken = async (req, res) => {
         // Find refresh token in database
         const storedToken = await prisma.refreshToken.findUnique({
             where: { token: refreshToken },
-            include: { user: true }
         });
+
         if (!storedToken) {
             return res.status(401).json({
                 error: 'Invalid refresh token',
@@ -168,6 +169,7 @@ export const refreshAccessToken = async (req, res) => {
             await prisma.refreshToken.delete({
                 where: { token: refreshToken }
             });
+
 
             return res.status(401).json({
                 error: 'Refresh token expired. Please log in again.',
