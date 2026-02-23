@@ -20,11 +20,10 @@ export const generateAccessToken = (userId, res) => {
 }
 
 export const generateRefreshToken = async (userId, res) => {
-    const usersId = userId
     const token = crypto.randomBytes(64).toString('hex');
     try {
         await prisma.refreshToken.upsert({
-            where: { userId: usersId },
+            where: { userId },
             update: {
                 token,
                 expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
