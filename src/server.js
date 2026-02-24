@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 
 import authRoutes from './routes/authRoutes.js';
 import bookRoutes from './routes/booksRoutes.js';
+import userProfileRoutes from './routes/userRoutes.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
 
 
@@ -30,6 +31,8 @@ app.use("/auth", authRoutes);
 //PUT THIS HERE SO THAT ALL ROUTES BELOW THIS WILL NEED AUTHENTICATION
 app.use(authMiddleware)
 app.use("/books", bookRoutes);
+app.use('/profile', userProfileRoutes)
+
 app.use("/", (req, res) => {
     res.json({ message: "Welcome to Bookish Server" })
 });
