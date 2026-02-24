@@ -16,7 +16,6 @@ export const authMiddleware = async (req, res, next) => {
         } else if (req.cookies?.accessToken) {
             token = req.cookies.accessToken
         }
-        console.log(token, 'Token found in auth middleware');
         if (!token) {
             // Check if refresh token exists
             if (req.cookies?.refreshToken) {
@@ -37,7 +36,6 @@ export const authMiddleware = async (req, res, next) => {
         try {
             //verify the token is valid and extract the user id
             const decoded = jwt.verify(token, process.env.JWT_SECRET)
-
             //check if user exist in the database
             const user = await prisma.user.findUnique({
                 where: { id: decoded.id }

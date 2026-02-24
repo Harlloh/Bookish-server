@@ -2,13 +2,17 @@ import cloudinary from "../../utils/cloudinary.js"
 import { prisma } from "../db.js"
 
 export const getAllBooks = async (req, res) => {
-    res.json({ message: 'gett all books' })
+    const response = await prisma.books.findMany()
+    console.log(response);
+    res.json({ success: true, message: 'All books gotten successfully', data: response })
 }
+
+
 export const addBook = async (req, res) => {
     const { title, author, overview, } = req.body;
     const publishedYear = parseInt(req.body.publishedYear)
+    console.log(req.body);
 
-    console.log(req.file, 'Image file path to be uploaded');
     if (!title || !author || !publishedYear) {
         return res.status(400).json({
             success: false,
@@ -29,7 +33,6 @@ export const addBook = async (req, res) => {
                 }
 
                 imageUrl = result.secure_url;
-                console.log('Book image uploaded successfully:', imageUrl);
             }
 
 
@@ -51,6 +54,7 @@ export const addBook = async (req, res) => {
             return res.status(201).json({
                 success: true,
                 message: 'Book added successfully',
+                book: response
             });
         } catch (error) {
             console.error('Upload failed:', error);
