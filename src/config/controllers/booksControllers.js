@@ -66,29 +66,3 @@ export const addBook = async (req, res) => {
     }
 }
 
-export const getDashboardStat = async (req, res) => {
-    const [totalBooks, totalReviews, totalMembers, recentBooks, topRatedBooks] = await Promise.all([
-        prisma.books.count(),
-        prisma.reviews.count(),
-        prisma.user.count(),
-
-        //recently aded -last 4 books
-        prisma.books.findMany({
-            take: 4,
-            orderBy: { createdAt: 'desc' },
-            include: { select: { star: true } },
-        }),
-
-        prisma.books.findMany({
-            include: {
-                reviews: { select: { star: true } }
-            }
-        })
-    ])
-
-    //calculate avg rating and review count for each book
-    // const formatBooks = (books) =>
-    //     books.map((book) => ({
-
-    //     }))
-}

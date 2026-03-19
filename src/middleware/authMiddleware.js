@@ -75,3 +75,21 @@ export const authMiddleware = async (req, res, next) => {
 
 
 }
+
+export const optionalAuthMiddleWare = (req, res, next) => {
+    const token = req.cookies?.accessToken;
+
+    if (!token) {
+        req.user = null;
+        return next();
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+    } catch (error) {
+        req.user = null;
+    }
+
+    next();
+}
