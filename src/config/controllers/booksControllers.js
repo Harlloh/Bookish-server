@@ -1,10 +1,51 @@
+import { success } from "zod"
 import cloudinary from "../../utils/cloudinary.js"
 import { prisma } from "../db.js"
 
 export const getAllBooks = async (req, res) => {
+    const { sort, page, pageSize, search } = req.query
     const response = await prisma.books.findMany()
     console.log(response);
     res.json({ success: true, message: 'All books gotten successfully', data: response })
+}
+
+
+export const getBookById = async (req, res) => {
+    const { id } = req.params
+
+    const book = await prisma.books.findUnique({
+        where: { id },
+        include: {
+            reviews: {
+                select: {
+                    id: true,
+                    star: true,
+                    comment: true,
+                    createdOn: true,
+                    createdBy: {
+                        select: {
+                            id: true,
+                            name: true,
+                        }
+                    }
+                },
+                orderBy: { createdOn: 'desc' },
+                take: 10
+            },
+            addedBy: {
+                select: {
+                    id: true,
+                    name: true,
+                }
+            }
+        }
+    });
+
+    if (!book) {
+        return res.status(404).json({ success: false, error: 'book not found' })
+    }
+
+    res.json({ success: true, book })
 }
 
 

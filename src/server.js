@@ -9,6 +9,7 @@ import authRoutes from './routes/authRoutes.js';
 import bookRoutes from './routes/booksRoutes.js';
 import userProfileRoutes from './routes/userRoutes.js';
 import dashBoardRoute from './routes/dashboardRoutes.js';
+import reviewsRoute from './routes/reviewsRoute.js';
 import { authMiddleware, optionalAuthMiddleWare } from './middleware/authMiddleware.js';
 
 
@@ -32,6 +33,7 @@ app.use("/auth", authRoutes);
 app.use("/dashboard", optionalAuthMiddleWare, dashBoardRoute);
 //PUT THIS HERE SO THAT ALL ROUTES BELOW THIS WILL NEED AUTHENTICATION
 app.use(authMiddleware)
+app.use("/reviews", reviewsRoute);
 app.use("/books", bookRoutes);
 app.use('/profile', userProfileRoutes)
 

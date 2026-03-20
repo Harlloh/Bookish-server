@@ -66,9 +66,12 @@ model Books {
   addedById     String
   createdAt     DateTime  @default(now())
   reviews       Reviews[]
+  reviewCount   Int       @default(0)
+  avgRating     Float     @default(0)
 
   @@index([addedById]) // Add index for better query performance
   @@index([publishedYear]) // Add index for better query performance
+  @@index([avgRating]) // Add index for better query performance
 }
 
 model Reviews {
