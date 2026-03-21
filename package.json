@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "start": "node --env-file=.env --watch src/server.js",
-    "seed:movies": "node --env-file=.env prisma/seed.js"
+    "seed:movies": "node --env-file=.env prisma/seed.js",
+    "start:prod": "node src/server.js",
+    "build": "prisma generate"
   },
   "keywords": [],
   "author": "",
