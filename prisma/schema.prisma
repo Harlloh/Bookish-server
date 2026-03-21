@@ -84,6 +84,7 @@ model Reviews {
   comment     String   @db.Text
   createdOn   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  edited      Boolean  @default(false)
 
   @@unique([bookId, createdById]) // ✅ Added - one review per user per book
   @@index([bookId]) // ✅ Added - fast lookup of all reviews for a book

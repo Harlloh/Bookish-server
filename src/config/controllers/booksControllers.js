@@ -5,7 +5,6 @@ import { prisma } from "../db.js"
 export const getAllBooks = async (req, res) => {
     const { sort, page, pageSize, search } = req.query
     const response = await prisma.books.findMany()
-    console.log(response);
     res.json({ success: true, message: 'All books gotten successfully', data: response })
 }
 
@@ -22,6 +21,7 @@ export const getBookById = async (req, res) => {
                     star: true,
                     comment: true,
                     createdOn: true,
+                    edited: true,
                     createdBy: {
                         select: {
                             id: true,
@@ -52,7 +52,6 @@ export const getBookById = async (req, res) => {
 export const addBook = async (req, res) => {
     const { title, author, overview, } = req.body;
     const publishedYear = parseInt(req.body.publishedYear)
-    console.log(req.body);
 
     if (!title || !author || !publishedYear) {
         return res.status(400).json({
