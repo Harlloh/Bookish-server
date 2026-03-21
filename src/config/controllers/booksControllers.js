@@ -3,9 +3,72 @@ import cloudinary from "../../utils/cloudinary.js"
 import { prisma } from "../db.js"
 
 export const getAllBooks = async (req, res) => {
-    const { sort, page, pageSize, search } = req.query
-    const response = await prisma.books.findMany()
-    res.json({ success: true, message: 'All books gotten successfully', data: response })
+    const { sort, page = 1, pageSize = 10, search } = req.query;
+
+
+    const pageNum = parseInt(page);
+    const pageSizeNum = parseInt(pageSize);
+    const skip = (pageNum - 1) * pageSizeNum;
+    const searchText = search
+
+    //build search filter
+    const where = searchText ? {
+        OR: [
+            { title: { contains: searchText, mode: 'insensitive' } },
+            { author: { contains: searchText, mode: 'insensitive' }, }
+        ]
+    } : {};
+
+    const orderBy = sort === 'rating' ? { avgRating: 'desc' } :
+        sort === 'title' ? { title: 'asc' } :
+            { createdAt: 'desc' };
+
+    const [books, total] = await Promise.all([
+        prisma.books.findMany({
+            where,
+            orderBy,
+            skip,
+            take: pageSizeNum,
+            include: {
+                addedBy: { select: { id: true, name: true } }
+            }
+        }),
+        prisma.books.count({ where })
+    ]);
+
+    res.json({
+        success: true,
+        data: books,
+        pagination: {
+            total,
+            page: pageNum,
+            pageSize: pageSizeNum,
+            totalPages: Math.ceil(total / pageSizeNum),
+            hasNextPage: pageNum < Math.ceil(total / pageSizeNum),
+            hasPrevPage: pageNum > 1,
+        }
+    })
+}
+
+export const getBookByName = async (req, res) => {
+    const { title } = req.body
+
+    if (!title) {
+        return res.json({ success: false, data: [] })
+    }
+
+    const books = await prisma.books.findMany({
+        where: {
+            title: { contains: title, mode: 'insensitive' }
+        },
+        select: {
+            title: true,
+            id: true,
+            imageUrl: true,
+        }
+    })
+
+    res.json({ success: true, data: books })
 }
 
 
