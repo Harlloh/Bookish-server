@@ -1,10 +1,11 @@
 import express from 'express';
-import { login, logout, register, verifyEmail, refreshAccessToken, fetchUser } from './../config/controllers/authControllers.js';
+import { login, logout, register, verifyEmail, refreshAccessToken, fetchUser, resendEmailVerification } from './../config/controllers/authControllers.js';
 import { authMiddleware } from './../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 router.post('/register', register)
+router.post('/resend-mail', resendEmailVerification)
 
 router.post('/verify', verifyEmail)
 

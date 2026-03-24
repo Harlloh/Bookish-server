@@ -38,6 +38,34 @@ export const register = async (req, res) => {
     successResponse(200, res, user, 'User registered successfully, check your mail for verification link');
 
 }
+
+export const resendEmailVerification = async (req, res) => {
+    const { userId } = req.body;
+
+    const user = await prisma.user.findFirst({
+        where: { id: userId }
+    })
+    if (!user) {
+        return res.json({ success: false, message: 'User does not exist' })
+    };
+    if (user.isVerified) {
+        return res.json({ success: false, message: 'User is already verified' })
+    }
+
+    const userToken = await prisma.verificationToken.findFirst({
+        where: { userId: user.id },
+    });
+
+    if (userToken) {
+        await prisma.verificationToken.delete({
+            where: { id: userToken.id }
+        });
+    }
+    await handleEmailVerification(user);
+
+    return successResponse(200, res, null, 'Verification email resent successfully');
+
+}
 const handleEmailVerification = async (user) => {
     const verificationToken = crypto.randomBytes(32).toString('hex');
     await prisma.verificationToken.create({
@@ -52,6 +80,8 @@ const handleEmailVerification = async (user) => {
 
     await sendVerificationEmail(user.email, verificationUrl, user.name)
 }
+
+
 
 
 
