@@ -16,13 +16,14 @@ export const authMiddleware = async (req, res, next) => {
         } else if (req.cookies?.accessToken) {
             token = req.cookies.accessToken
         }
+        console.log('The token should be after this', token);
         if (!token) {
             // Check if refresh token exists
             if (req.cookies?.refreshToken) {
                 // Has refresh token but no access token - frontend should refresh
                 return res.status(401).json({
-                    error: 'Access token missing. Please refresh.',
-                    code: 'NO_ACCESS_TOKEN'
+                    error: 'Access token missing. Please log in again.',
+                    code: 'INVALID_REFRESH_TOKEN'
                 });
             }
             // No access token AND no refresh token - must sign in

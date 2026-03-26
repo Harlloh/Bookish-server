@@ -254,7 +254,19 @@ export const fetchUser = async (req, res) => {
 
 
 export const logout = async (req, res) => {
-    res.cookie('jwt', "", {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (refreshToken) {
+        await prisma.refreshToken.deleteMany({
+            where: { token: refreshToken }
+        });
+    }
+    res.cookie('accessToken', '', {
+        expires: new Date(0),
+        httpOnly: true,
+    });
+
+    res.cookie('refreshToken', '', {
         expires: new Date(0),
         httpOnly: true,
     });
