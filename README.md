@@ -15,6 +15,7 @@ REST API for the BookReview platform. Handles authentication, book management, a
 - **Bcryptjs** — password hashing
 - **Multer** — file upload handling
 - **Zod** — request validation
+- **Sentry** — error monitoring and tracking
 
 ---
 
@@ -29,12 +30,14 @@ REST API for the BookReview platform. Handles authentication, book management, a
 - Lightweight book search endpoint for header dropdown
 - Optional auth middleware for public endpoints
 - Dashboard stats (total books, reviews, members)
+- Production error monitoring via Sentry
 
 ---
 
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
 - A [Neon](https://neon.tech) PostgreSQL database
 - A [Cloudinary](https://cloudinary.com) account
@@ -86,6 +89,15 @@ npm run start
 ```bash
 npm run start:prod
 ```
+
+---
+
+## Error Monitoring
+
+This project uses [Sentry](https://sentry.io) for error tracking in production. Sentry is initialized in `instrument.js`, which is imported before anything else in `server.js` to ensure all errors are captured from startup.
+
+
+The `Sentry.expressErrorHandler()` middleware is registered after all routes to automatically capture errors thrown inside route handlers.
 
 ---
 
@@ -148,6 +160,7 @@ src/
 │   └── userRoutes.js
 ├── utils/
 │   └── cloudinary.js
+├── instrument.js
 └── server.js
 prisma/
 └── schema.prisma
@@ -159,7 +172,7 @@ prisma/
 
 Recommended platforms: **Railway** or **Render**.
 
-Set all environment variables from the `.env.example` in your platform dashboard.
+Set all environment variables from `.env.example` in your platform dashboard.
 
 Build command:
 ```bash
