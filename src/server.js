@@ -1,3 +1,5 @@
+import "../instrument.js"
+import * as Sentry from "@sentry/node";
 import express from 'express';
 import { connectDB, disconnectDB } from './config/db.js';
 import cors from 'cors';
@@ -40,6 +42,8 @@ app.use('/profile', userProfileRoutes)
 app.use("/", (req, res) => {
     res.json({ message: "Welcome to Bookish Server" })
 });
+
+app.use(Sentry.expressErrorHandler());
 const server = app.listen(port, () => console.log(`listening to port ${port}`))
 
 
@@ -63,7 +67,7 @@ process.on('SIGINT', async (err) => {
     console.error(`SIGTERM received, shutting down: ${err.message}`);
     server.close(async () => {
         await disconnectDB();
-        process.exit(1);
+        process.exit(0);
     })
 });
 
