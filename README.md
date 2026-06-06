@@ -16,6 +16,7 @@ REST API for the BookReview platform. Handles authentication, book management, a
 - **Multer** — file upload handling
 - **Zod** — request validation
 - **Sentry** — error monitoring and tracking
+- **Groq SDK** — AI-powered review summarization via Llama 3
 
 ---
 
@@ -66,7 +67,16 @@ NODE_ENV=development
 PORT=5001
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_email_app_password
+GROQ_API_KEY=your_groq_api_key
 ```
+
+### Generating JWT Secrets
+
+```bash
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+```
+
+Run this twice to generate separate secrets for `JWT_SECRET` and `JWT_REFRESH_SECRET`.
 
 ### Database Setup
 
@@ -96,7 +106,6 @@ npm run start:prod
 
 This project uses [Sentry](https://sentry.io) for error tracking in production. Sentry is initialized in `instrument.js`, which is imported before anything else in `server.js` to ensure all errors are captured from startup.
 
-
 The `Sentry.expressErrorHandler()` middleware is registered after all routes to automatically capture errors thrown inside route handlers.
 
 ---
@@ -104,37 +113,43 @@ The `Sentry.expressErrorHandler()` middleware is registered after all routes to 
 ## API Endpoints
 
 ### Auth
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/auth/register` | Register new user | ❌ |
-| POST | `/auth/login` | Login | ❌ |
-| POST | `/auth/logout` | Logout | ✅ |
-| POST | `/auth/refresh` | Refresh access token | ❌ |
-| GET | `/auth/verify-email/:token` | Verify email | ❌ |
+
+| Method | Endpoint                    | Description          | Auth |
+| ------ | --------------------------- | -------------------- | ---- |
+| POST   | `/auth/register`            | Register new user    | ❌   |
+| POST   | `/auth/login`               | Login                | ❌   |
+| POST   | `/auth/logout`              | Logout               | ✅   |
+| POST   | `/auth/refresh`             | Refresh access token | ❌   |
+| GET    | `/auth/verify-email/:token` | Verify email         | ❌   |
 
 ### Books
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/books` | Get all books (paginated, search, sort) | ❌ |
-| GET | `/books/:id` | Get book by ID with reviews | ❌ |
-| POST | `/books` | Add a new book | ✅ |
-| POST | `/books/search` | Lightweight title search for dropdown | ❌ |
+
+| Method | Endpoint                | Description                              | Auth |
+| ------ | ----------------------- | ---------------------------------------- | ---- |
+| GET    | `/books`                | Get all books (paginated, search, sort)  | ❌   |
+| GET    | `/books/:id`            | Get book by ID with reviews              | ❌   |
+| POST   | `/books`                | Add a new book                           | ✅   |
+| POST   | `/books/search`         | Lightweight title search for dropdown    | ❌   |
+| GET    | `/books/:id/ai-summary` | Get AI-generated summary of book reviews | ❌   |
 
 ### Reviews
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/reviews/add-review/:id` | Add review to a book | ✅ |
-| PUT | `/reviews/edit-review/:id` | Edit your review | ✅ |
+
+| Method | Endpoint                   | Description          | Auth |
+| ------ | -------------------------- | -------------------- | ---- |
+| POST   | `/reviews/add-review/:id`  | Add review to a book | ✅   |
+| PUT    | `/reviews/edit-review/:id` | Edit your review     | ✅   |
 
 ### Dashboard
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/dashboard` | Get stats, recent books, top rated | Optional |
+
+| Method | Endpoint     | Description                        | Auth     |
+| ------ | ------------ | ---------------------------------- | -------- |
+| GET    | `/dashboard` | Get stats, recent books, top rated | Optional |
 
 ### Profile
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/profile` | Get current user profile with books and reviews | ✅ |
+
+| Method | Endpoint   | Description                                     | Auth |
+| ------ | ---------- | ----------------------------------------------- | ---- |
+| GET    | `/profile` | Get current user profile with books and reviews | ✅   |
 
 ---
 
@@ -175,11 +190,13 @@ Recommended platforms: **Railway** or **Render**.
 Set all environment variables from `.env.example` in your platform dashboard.
 
 Build command:
+
 ```bash
 npm run build
 ```
 
 Start command:
+
 ```bash
 npm run start:prod
 ```
